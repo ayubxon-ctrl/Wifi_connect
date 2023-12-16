@@ -14,14 +14,15 @@ class Server {
   Server(
     this.onData,
     this.onError,
-  );
+  ); /////ggtttttakgazaxasdf
+  //fhfdsoow
   ServerSocket? server;
   bool running = false;
   List<Socket> sockets = [];
   Future<void> start() async {
     runZoned(
       () async {
-        server = await ServerSocket.bind('192.168.0.192', 4040);
+        server = await ServerSocket.bind('192.168.0.192', 6060);
         running = true;
         server!.listen(onRequest);
       },
@@ -51,16 +52,16 @@ class Server {
   }
 
   void broadcast(dynamic data) {
-    print('333');
-
     // ignore: avoid_print
     print('data $data');
-    onData!(
-      Uint8List.fromList(
-        "$data".codeUnits,
-      ),
-    );
-
+    if (data == 'golib') {
+    } else {
+      onData!(
+        Uint8List.fromList(
+          "$data".codeUnits,
+        ),
+      );
+    }
     for (final socket in sockets) {
       socket.write(data);
     }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get_state_manager/src/simple/get_state.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wifi_connect/game_page.dart';
-import 'package:wifi_connect/get_model.dart';
+import 'package:wifi_connect/bloc/draw_bloc.dart';
+import 'package:wifi_connect/ui/game_page.dart';
+import 'package:wifi_connect/service/get_model.dart';
+import 'package:wifi_connect/methods/when_start.dart';
 import 'package:wifi_connect/service/server_controller.dart/server_controller.dart';
 
 void main() async {
@@ -15,21 +17,30 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => DrawBloc(),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const DesktopApp(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const DesktopApp(title: 'wifi connect'),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class DesktopApp extends StatefulWidget {
-  const DesktopApp({super.key, required this.title});
-  final String title;
+  const DesktopApp({
+    super.key,
+  });
+
   @override
   State<DesktopApp> createState() => _DesktopAppState();
 }
@@ -50,55 +61,61 @@ class _DesktopAppState extends State<DesktopApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: SingleChildScrollView(
-        child: GetBuilder<ServerController>(
-          init: ServerController(),
-          builder: (controller) {
-            return Column(
-              children: [
-                const SizedBox(height: 10),
-                FloatingActionButton(
-                  onPressed: () async {},
-                  heroTag: 'onof',
-                  child: Text(controller.server!.running ? 'ON' : "OFF"),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () async {
-                    /////////////////////////////////
-                    await controller.startOrStopServer();
-                  },
-                  child: Text(controller.server!.running ? 'Stop' : "Start"),
-                ),
-                const SizedBox(height: 10),
-                controller.serverLogs.contains('boshlash')
-                    ? Center(
-                        child: FloatingActionButton(
-                            heroTag: const Text('jonatucchi'),
-                            onPressed: () async {
-                              final SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
-                              prefs.setBool('toxtat', true);
-
-                              // ignore: use_build_context_synchronously
-                              Navigator.push(context, MaterialPageRoute(
-                                builder: (context) {
-                                  return const GamePage();
-                                },
-                              ));
-
-                              controller.update();
-                            },
-                            child: const Text('start')),
-                      )
-                    : const Center(child: Text('null boldi'))
-              ],
-            );
-          },
+        backgroundColor: Colors.blue,
+        centerTitle: true,
+        title: const Text(
+          'Wifi_connect',
+          style: TextStyle(
+              fontSize: 28, fontWeight: FontWeight.w600, color: Colors.white),
         ),
+      ),
+      body: BlocConsumer<DrawBloc, DrawState>(
+        listener: (context, state) {
+          if (state is DrawSuccesState) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return const GamePage();
+              },
+            ));
+          }
+        },
+        builder: (context, state) {
+          return GetBuilder<ServerController>(
+            init: ServerController(),
+            builder: (controller) {
+              WhenStart().isStart(controller, context, a);
+              return Center(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {},
+                      style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(150, 40)),
+                      child: Text(controller.server!.running ? 'ON' : "OF"),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () async {
+                        /////////////////////////////////
+                        await controller.startOrStopServer();
+                        Future.delayed(
+                          const Duration(milliseconds: 500),
+                          () => setState(() {}),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(150, 40)),
+                      child:
+                          Text(controller.server!.running ? 'Stop' : "Start"),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

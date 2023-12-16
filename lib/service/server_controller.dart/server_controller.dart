@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wifi_connect/get_model.dart';
+import 'package:wifi_connect/service/get_model.dart';
 import 'package:wifi_connect/service/data_server.dart';
 
 class ServerController extends GetxController {
   Server? server;
+  String firstWinner = '';
+  bool whodraw = false;
   List<String> serverLogs = [];
   List<ReciveDataModel> gameLog = [];
 
@@ -52,13 +54,29 @@ class ServerController extends GetxController {
     final recivedData = String.fromCharCodes(data);
     if (recivedData == 'boshlash') {
       serverLogs.add(recivedData);
+    } else if (recivedData == 'aniqlovchi') {
+      firstWinner = recivedData;
+
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setBool('toxtat', false);
     } else {
       gameLog = (jsonDecode(recivedData)["encodeData"])
           .map<ReciveDataModel>((e) => ReciveDataModel.fromJson(e))
           .toList();
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setBool('toxtat', true);
+      int durrang = 0;
+      for (var drawitem in gameLog) {
+        if (drawitem.value != '') {
+          durrang++;
+        } else {}
+      }
+      if (durrang == 9) {
+        whodraw = true;
+        update();
+      }
     }
+
     update();
   }
 

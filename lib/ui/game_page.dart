@@ -1,23 +1,26 @@
-// ignore_for_file: sized_box_for_whitespace, unrelated_type_equality_checks
-
 import 'dart:convert';
 
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/src/simple/get_state.dart';
+import 'package:flutter_timer_widget/flutter_timer_widget.dart';
+import 'package:flutter_timer_widget/timer_controller.dart';
+import 'package:flutter_timer_widget/timer_style.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wifi_connect/get_model.dart';
+import 'package:wifi_connect/service/get_model.dart';
 import 'package:wifi_connect/service/server_controller.dart/server_controller.dart';
+import 'package:wifi_connect/ui/splash.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
-
   @override
   State<GamePage> createState() => _GamePageState();
 }
 
 class _GamePageState extends State<GamePage> {
-  // ignore: prefer_typing_uninitialized_variables
-  var winner;
+  int drawerCounter = 0;
+  var winner = ['', '', ''];
+  ServerController controllera = Get.put(ServerController());
   List<ReciveDataModel> a = [
     ReciveDataModel(index: 1, value: ''),
     ReciveDataModel(index: 2, value: ''),
@@ -29,12 +32,13 @@ class _GamePageState extends State<GamePage> {
     ReciveDataModel(index: 8, value: ''),
     ReciveDataModel(index: 9, value: ''),
   ];
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<ServerController>(
-      init: ServerController(),
       builder: (controller) {
         return Scaffold(
+          backgroundColor: Colors.white,
           appBar: AppBar(
             centerTitle: true,
             title: const Text(
@@ -48,18 +52,26 @@ class _GamePageState extends State<GamePage> {
             children: [
               const SizedBox(height: 10),
               Text(
-                winner?.first == 'o' || winner?.first == 'x'
-                    ? 'winner: Player ${winner.first}'
-                    : '',
+                controller.firstWinner == 'aniqlovchi' ? 'winner Player:x' : '',
                 style:
                     const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
               ),
+              const SizedBox(height: 10),
+              Text(
+                winner.first == 'o' ? 'winner Player: o' : '',
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+              ),
+              controller.firstWinner == 'aniqlovchi' ? bbb() : const Text(''),
+              controller.whodraw == true ? bbbd() : const Text(''),
               Padding(
                 padding: const EdgeInsets.only(left: 10, right: 10, top: 150),
                 child: GridView.builder(
+                  physics: NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
+                    crossAxisSpacing: 3,
                     mainAxisSpacing: 3,
                   ),
                   scrollDirection: Axis.vertical,
@@ -71,18 +83,14 @@ class _GamePageState extends State<GamePage> {
                       width: 90,
                       height: 90,
                       child: FittedBox(
-                        child: FloatingActionButton(
-                          heroTag: const Text('btn'),
-                          shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadiusDirectional.circular(0)),
+                        child: ElevatedButton(
                           onPressed: () async {
                             final SharedPreferences prefs =
                                 await SharedPreferences.getInstance();
 
                             if (prefs.get('toxtat') == true) {
-                              print('===============');
-                              if (controller.gameLog[index].value != 'x') {
+                              if (controller.gameLog[index].value != 'x' &&
+                                  controller.gameLog[index].value == '') {
                                 ReciveDataModel set0 =
                                     ReciveDataModel(index: index, value: 'o');
 
@@ -143,32 +151,64 @@ class _GamePageState extends State<GamePage> {
                                       second == third &&
                                       first != '') {
                                     winner = line;
-                                    print('winner === ${winner.first}');
-                                    setState(() {});
 
-                                    break;
+                                    // ignore: use_build_context_synchronously
+                                    AwesomeDialog(
+                                      context: context,
+                                      dialogType: DialogType.success,
+                                      animType: AnimType.topSlide,
+                                      showCloseIcon: true,
+                                      title: 'You Won',
+                                      desc: 'Do you want to play again?',
+                                      btnCancelOnPress: () {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                          builder: (context) {
+                                            return const SplashScreen();
+                                          },
+                                        ));
+                                      },
+                                      btnOkOnPress: () {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                          builder: (context) {
+                                            return const SplashScreen();
+                                          },
+                                        ));
+                                      },
+                                    ).show();
                                   }
                                 }
 
-                                //    if (winner?.first == 'o' ||
-                                //      winner?.first == 'x') {
-                                //  print('golib jonatildi');
-                                // controller.messageHandle('golib');
+                                //////////
+                                ///
+                                ///
+                                ///
 
-                                controller.messageHandle(sendingO);
+                                if (winner.first == 'o') {
+                                  controller.messageHandle(sendingO);
 
+                                  controller.messageHandle('golib');
+                                } else {
+                                  controller.messageHandle(sendingO);
+                                }
                                 final SharedPreferences prefs =
                                     await SharedPreferences.getInstance();
                                 prefs.setBool('toxtat', false);
-
-                                controller.update();
                               }
                             }
+
+                            setState(() {});
                           },
+                          ///////////////////
+                          style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(0)),
+                              minimumSize: const Size(100, 100)),
                           child: Text(
                             controller.gameLog[index].value,
                             style: TextStyle(
-                                fontSize: 33,
+                                fontSize: 60,
                                 color: controller.gameLog[index].value == 'x'
                                     ? Colors.red
                                     : Colors.green),
@@ -179,32 +219,93 @@ class _GamePageState extends State<GamePage> {
                   },
                 ),
               ),
-              winner != null
-                  ? ElevatedButton(
-                      onPressed: () {
-                        controller.gameLog = a = [
-                          ReciveDataModel(index: 1, value: ''),
-                          ReciveDataModel(index: 2, value: ''),
-                          ReciveDataModel(index: 3, value: ''),
-                          ReciveDataModel(index: 4, value: ''),
-                          ReciveDataModel(index: 5, value: ''),
-                          ReciveDataModel(index: 6, value: ''),
-                          ReciveDataModel(index: 7, value: ''),
-                          ReciveDataModel(index: 8, value: ''),
-                          ReciveDataModel(index: 9, value: ''),
-                        ];
-                        controller.update();
-                      },
-                      child: const Text(
-                        'clear',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ))
-                  : const Text('dfvfbsdbd')
+              const SizedBox(height: 10),
             ],
           ),
         );
       },
+    );
+  }
+
+  bbb() {
+    // ignore: sized_box_for_whitespace
+    return Container(
+      height: 30,
+      width: 10,
+      child: FlutterTimer(
+        duration: Duration.zero,
+        onFinished: () {
+          return AwesomeDialog(
+                  context: context,
+                  dialogType: DialogType.error,
+                  animType: AnimType.topSlide,
+                  showCloseIcon: true,
+                  title: 'You Failed',
+                  desc: 'Do you want to play again?',
+                  btnOkOnPress: () {
+                    controllera.firstWinner = '';
+
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) {
+                        return const SplashScreen();
+                      },
+                    ));
+                  },
+                  btnOkIcon: Icons.cancel,
+                  btnOkColor: Colors.red)
+              .show();
+        },
+        timerController: TimerController(
+          elevation: 0,
+          margin: const EdgeInsets.all(4.0),
+          padding: const EdgeInsets.all(0.0),
+          background: Colors.red,
+          timerStyle: TimerStyle.rectangular,
+          timerTextStyle: const TextStyle(color: Colors.white, fontSize: 30),
+          subTitleTextStyle: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
+      ),
+    );
+  }
+
+  bbbd() {
+    return Container(
+      height: 30,
+      width: 10,
+      child: FlutterTimer(
+        duration: Duration.zero,
+        onFinished: () {
+          for (var drawitem in controllera.gameLog) {
+            if (drawitem != '') {
+              return AwesomeDialog(
+                context: context,
+                dialogType: DialogType.info,
+                animType: AnimType.topSlide,
+                showCloseIcon: true,
+                title: 'Nobody won',
+                desc: 'Do you want to play again?',
+                btnOkOnPress: () {
+                  controllera.whodraw = false;
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) {
+                      return const SplashScreen();
+                    },
+                  ));
+                },
+              ).show();
+            }
+          }
+        },
+        timerController: TimerController(
+          elevation: 0,
+          margin: const EdgeInsets.all(4.0),
+          padding: const EdgeInsets.all(0.0),
+          background: Colors.red,
+          timerStyle: TimerStyle.rectangular,
+          timerTextStyle: const TextStyle(color: Colors.white, fontSize: 30),
+          subTitleTextStyle: const TextStyle(color: Colors.white, fontSize: 12),
+        ),
+      ),
     );
   }
 }
